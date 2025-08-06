@@ -1,5 +1,5 @@
 # Use a base image com PHP e Apache
-FROM laravelsail/php82-composer:latest
+FROM php:8.2-apache
 
 # Instale dependências do sistema
 RUN apt-get update && apt-get install -y \
