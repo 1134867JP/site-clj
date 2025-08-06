@@ -1,7 +1,7 @@
 # Use a base image com PHP e Apache
 FROM php:8.2-apache
 
-# Instale dependências do sistema
+# Instale dependências do sistema e extensões PHP
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -35,6 +35,12 @@ RUN composer install --no-dev --optimize-autoloader \
 # Configure permissões
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Aponta o Apache para a pasta "public"
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
+
+# Evita aviso de ServerName
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Exponha a porta 80
 EXPOSE 80
