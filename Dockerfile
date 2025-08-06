@@ -27,20 +27,24 @@ WORKDIR /var/www/html
 # Copie os arquivos do projeto para o contêiner
 COPY . .
 
-# Instale as dependências do PHP e do Node.js
-RUN composer install --no-dev --optimize-autoloader \
-    && npm install \
-    && npm run build
-
-# Configure permissões
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Garante que o mod_rewrite esteja habilitado para rotas do Laravel
+RUN a2enmod rewrite
 
 # Aponta o Apache para a pasta "public"
 RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
 
 # Evita aviso de ServerName
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# Instale as dependências do PHP e do Node.js e gere a chave da aplicação
+RUN composer install --no-dev --optimize-autoloader \
+    && npm install \
+    && npm run build \
+    && php artisan key:generate
+
+# Configure permissões
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Exponha a porta 80
 EXPOSE 80
