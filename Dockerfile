@@ -1,54 +1,45 @@
-# Use a base image com PHP e Apache
+# PHP + Apache
 FROM php:8.2-apache
 
-# Instale dependências do sistema e extensões PHP
+# Dependências do sistema e extensões PHP
 RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    libzip-dev \
-    libpq-dev \
-    && docker-php-ext-install pdo_pgsql pdo_mysql mbstring exif pcntl bcmath gd zip
+    git unzip curl libpng-dev libonig-dev libxml2-dev zip libzip-dev libpq-dev \
+    && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd zip
 
-# Instale o Composer
-COPY --from=composer:2.5 /usr/bin/composer /usr/bin/composer
+# Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Instale o Node.js e npm
+# Node.js 20 + npm
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g npm@latest
 
-# Configure o diretório de trabalho
+# Apache: docroot em /public e permitir .htaccess
+RUN a2enmod rewrite && \
+    sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf && \
+    printf '\n<Directory "/var/www/html/public">\n    AllowOverride All\n</Directory>\n' >> /etc/apache2/apache2.conf && \
+    echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
 WORKDIR /var/www/html
 
-# Copie os arquivos do projeto para o contêiner
+# ---- Cache de dependências ----
+# Composer
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
+# Node/Vite
+COPY package.json package-lock.json* ./
+RUN npm ci || npm install
+
+# ---- Código da aplicação ----
 COPY . .
 
-# Habilite mod_rewrite do Apache (necessário para rotas do Laravel)
-RUN a2enmod rewrite
+# Build dos assets (usa Vite)
+RUN npm run build
 
-# Ajuste o DocumentRoot para a pasta 'public'
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
+# Permissões
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 775 storage bootstrap/cache
 
-# Evite aviso de ServerName
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-# Instale dependências e gere chave
-RUN composer install --no-dev --optimize-autoloader \
-    && npm install \
-    && npm run build \
-    && php artisan key:generate
-
-# Corrija permissões
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Exponha a porta padrão do Apache
 EXPOSE 80
-
-# Comando para iniciar o servidor Apache
 CMD ["apache2-foreground"]
