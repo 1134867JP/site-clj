@@ -37,12 +37,11 @@ RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /et
 # Evite aviso de ServerName
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Instale dependências, gere chave e execute migrations
+# Instale dependências e gere chave
 RUN composer install --no-dev --optimize-autoloader \
     && npm install \
     && npm run build \
-    && php artisan key:generate \
-    && php artisan migrate --force
+    && php artisan key:generate
 
 # Corrija permissões
 RUN chown -R www-data:www-data /var/www/html \
