@@ -30,11 +30,11 @@ WORKDIR /var/www/html
 # ============== Fase de cache de dependências ==============
 
 # ---- PHP deps (cache) ----
-COPY composer.json composer.lock ./
+COPY composer.json composer.lock ./ 
 RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts
 
 # ---- Node deps (cache) ----
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json* ./ 
 RUN npm ci || npm install
 
 # ============== Código da aplicação ==============
@@ -51,4 +51,8 @@ RUN chown -R www-data:www-data /var/www/html && \
     chmod -R 775 storage bootstrap/cache
 
 EXPOSE 80
-CMD ["apache2-foreground"]
+
+# ---- Início com migrações ----
+CMD php artisan config:clear && \
+    php artisan migrate --force && \
+    apache2-foreground
