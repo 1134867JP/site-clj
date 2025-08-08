@@ -37,11 +37,18 @@ RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /et
 # Evite aviso de ServerName
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
+# Create required directories first
+RUN mkdir -p storage/logs \
+    && mkdir -p storage/framework/sessions \
+    && mkdir -p storage/framework/views \
+    && mkdir -p storage/framework/cache \
+    && mkdir -p bootstrap/cache
+
 # Instale dependências e gere chave
-RUN composer install --no-dev --optimize-autoloader \
-    && npm install \
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
+    && npm ci --only=production \
     && npm run build \
-    && php artisan key:generate
+    && php artisan key:generate --force
 
 # Corrija permissões
 RUN chown -R www-data:www-data /var/www/html \

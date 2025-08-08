@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: cifradocs
+    env: php
+    buildCommand: "./build.sh"
+    startCommand: "./start.sh"
+    plan: free
+    region: oregon
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: LOG_CHANNEL
+        value: stack
+      - key: LOG_LEVEL
+        value: info
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: SESSION_DRIVER
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: CACHE_STORE
+        value: file
+      - key: FILESYSTEM_DISK
+        value: local
+    buildFilter:
+      paths:
+        - "**"
+      ignoredPaths:
+        - ".git/**"
+        - "node_modules/**"
+        - "vendor/**"
+        - "storage/logs/**"
