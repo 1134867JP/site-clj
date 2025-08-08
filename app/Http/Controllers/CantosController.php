@@ -119,6 +119,9 @@ class CantosController extends Controller
         if ($request->filled('tipo')) {
             $query->where('tipo', $request->tipo);
         }
+        if ($request->filled('q')) {
+            $query->where('titulo', 'like', '%' . $request->q . '%');
+        }
         $cantos = $query->get();
         return view('cantos.selecionar', compact('cantos', 'tipos'));
     }

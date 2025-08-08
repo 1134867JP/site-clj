@@ -17,6 +17,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Rota para exibir o perfil do usuário
+    Route::get('/profile/show', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
+
     // 👇 Rotas dos Cantos
     Route::get('cantos/pdf', [CantosController::class, 'gerarPDF'])->name('cantos.pdf');
     Route::get('cantos/selecionar', [CantosController::class, 'selecionar'])->name('cantos.selecionar');
