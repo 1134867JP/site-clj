@@ -27,10 +27,12 @@
                 </form>
 
                 <!-- CTA -->
+                @can('create', App\Models\Canto::class)
                 <a href="{{ route('cantos.create') }}"
                    class="px-3 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 text-sm font-semibold shadow">
                     + Adicionar Canto
                 </a>
+                @endcan
             </div>
         </div>
     </x-slot>
@@ -137,12 +139,20 @@
                                       dark:bg-blue-500 dark:hover:bg-blue-600">
                                 Ver
                             </a>
+                            @can('update', $canto)
                             <a href="{{ route('cantos.edit', $canto) }}"
                                class="px-3 py-1 rounded-lg text-xs font-medium
                                       bg-amber-500 text-white hover:bg-amber-600
                                       dark:bg-amber-400 dark:hover:bg-amber-500">
                                 Editar
                             </a>
+                            @endcan
+                            @can('delete', $canto)
+                            <form method="POST" action="{{ route('cantos.destroy', $canto) }}" onsubmit="return confirm('Remover?')">
+                                @csrf @method('DELETE')
+                                <button class="px-3 py-1 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600">Excluir</button>
+                            </form>
+                            @endcan
                         </div>
                     </div>
                 @empty

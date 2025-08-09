@@ -4,7 +4,7 @@
         x-init="init()"
         class="max-w-6xl mx-auto py-8 px-4"
     >
-        <form method="GET" action="{{ route('cantos.selecionar') }}" id="formCantos">
+        <form method="GET" action="{{ route('cantos.pdf') }}" @submit="if(selected.size === 0){ $event.preventDefault(); }">
             <!-- Filtros / Ações -->
             <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
                 <div class="flex items-center gap-3">
@@ -24,8 +24,7 @@
                                class="w-full rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500">
                     </div>
 
-                    <!-- Botão Filtrar -->
-                    <button type="submit"
+                    <button type="submit" formaction="{{ route('cantos.selecionar') }}"
                             class="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-semibold text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-slate-700">
                         Filtrar
                     </button>
@@ -111,8 +110,8 @@
 
             <!-- Ações -->
             <div class="mt-6 flex justify-end gap-3">
-                <!-- Botão PDF -->
-                <button type="submit" onclick="document.getElementById('formCantos').action='{{ route('cantos.pdf') }}'"
+                <button type="submit"
+                        :class="selected.size === 0 ? 'opacity-50 cursor-not-allowed' : ''"
                         class="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
                     Gerar PDF com Selecionados
                 </button>

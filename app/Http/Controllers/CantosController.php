@@ -5,124 +5,155 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Canto;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class CantosController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
         $tipos = ['Entrada', 'Ato Penitencial', 'Glória', 'Ofertório', 'Santo', 'Cordeiro', 'Comunhão', 'Final', 'Abraço da Paz', 'Pai Nosso'];
+
         $query = Canto::query();
         if ($request->filled('tipo')) {
             $query->where('tipo', $request->tipo);
         }
+
         $cantos = $query->get();
+
         return view('cantos.index', compact('cantos', 'tipos'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
+        $this->authorize('create', \App\Models\Canto::class);
         return view('cantos.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
+        $this->authorize('create', \App\Models\Canto::class);
         $tipos = ['Entrada', 'Ato Penitencial', 'Glória', 'Ofertório', 'Santo', 'Cordeiro', 'Comunhão', 'Final', 'Abraço da Paz', 'Pai Nosso'];
+
         $validated = $request->validate([
             'titulo' => 'required|string|max:255',
-            'tipo' => ['required', 'string', 'in:' . implode(',', $tipos)],
-            'letra' => 'required|string',
+            'tipo'   => ['required', 'string', 'in:' . implode(',', $tipos)],
+            'letra'  => 'required|string',
         ]);
+
         Canto::create($validated);
+
         return redirect()->route('cantos.index')->with('success', 'Canto criado com sucesso!');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($id)
     {
         $canto = Canto::findOrFail($id);
-        return view('cantos.show', compact('canto'));
+        $key   = self::getKeyFromLetra($canto->letra); // calcula o tom e manda pra view
+
+        return view('cantos.show', compact('canto', 'key'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit($id)
     {
         $canto = Canto::findOrFail($id);
+        $this->authorize('update', $canto);
         return view('cantos.edit', compact('canto'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
+        $canto = Canto::findOrFail($id);
+        $this->authorize('update', $canto);
         $tipos = ['Entrada', 'Ato Penitencial', 'Glória', 'Ofertório', 'Santo', 'Cordeiro', 'Comunhão', 'Final', 'Abraço da Paz', 'Pai Nosso'];
+
         $validated = $request->validate([
             'titulo' => 'required|string|max:255',
-            'tipo' => ['required', 'string', 'in:' . implode(',', $tipos)],
-            'letra' => 'required|string',
+            'tipo'   => ['required', 'string', 'in:' . implode(',', $tipos)],
+            'letra'  => 'required|string',
         ]);
-        $canto = Canto::findOrFail($id);
+
         $canto->update($validated);
+
         return redirect()->route('cantos.index')->with('success', 'Canto atualizado com sucesso!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
         $canto = Canto::findOrFail($id);
+        $this->authorize('delete', $canto);
         $canto->delete();
+
         return redirect()->route('cantos.index')->with('success', 'Canto removido com sucesso!');
     }
 
-    /**
-     * Gera o PDF dos cantos selecionados.
-     */
     public function gerarPDF(Request $request)
     {
         $ids = $request->get('ids', []);
-        if (empty($ids)) {
-            return redirect()->route('cantos.index')->with('error', 'Nenhum canto foi selecionado.');
-        }
-
-        $cantos = Canto::whereIn('id', $ids)->get();
+        $cantos = \App\Models\Canto::whereIn('id', $ids)->get();
 
         if ($cantos->isEmpty()) {
-            return redirect()->route('cantos.index')->with('error', 'IDs inválidos.');
+            return redirect()->route('cantos.index')->with('error', 'Nenhum canto selecionado.');
         }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('cantos.pdf', compact('cantos'));
-        return $pdf->download('missa.pdf'); // <- encerra aqui
+        $pdf = Pdf::loadView('cantos.pdf', [
+            'cantos' => $cantos,
+            // se quiser passar algo a mais, pode
+        ]);
+
+        // melhora renderização
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download('cantos_missa_clj.pdf');
     }
 
-    /**
-     * Exibe a view de seleção de cantos.
-     */
+
     public function selecionar(Request $request)
     {
         $tipos = ['Entrada', 'Ato Penitencial', 'Glória', 'Ofertório', 'Santo', 'Cordeiro', 'Comunhão', 'Final', 'Abraço da Paz', 'Pai Nosso'];
+
         $query = Canto::query();
+
         if ($request->filled('tipo')) {
             $query->where('tipo', $request->tipo);
         }
+
         if ($request->filled('q')) {
             $query->where('titulo', 'like', '%' . $request->q . '%');
         }
+
         $cantos = $query->get();
+
         return view('cantos.selecionar', compact('cantos', 'tipos'));
+    }
+
+    /** Extrai o tom da letra (primeiro acorde encontrado no início de linha) */
+    public static function getKeyFromLetra($letra)
+    {
+        if (preg_match('/^\s*\[?([A-G][b#]?)/m', $letra, $m)) {
+            return $m[1];
+        }
+        return 'C';
+    }
+
+    /**
+     * Format lyrics by wrapping chords in a span with a specific class.
+     */
+    public static function formatCifra($texto)
+    {
+        $pattern = '/(^|[\s(])' .
+                   '([A-G](?:#|b)?' .
+                     '(?:maj7|maj9|maj11|maj13|m7|m9|m11|m13|maj|min|m|dim|aug|sus2|sus4|add9|add11|add13|6|7|9|11|13)?' .
+                     '(?:\([^\)]*\))?' .
+                     '(?:\/[A-G](?:#|b)?(?:m7|m|7|9|11|13)?)?' .
+                   ')' .
+                   '(?=$|\s|[),.;:])(?![a-zà-úâêîôûãõç])' .
+                   '/mu';
+
+        $escaped = e($texto); // Escapa HTML primeiro
+        return preg_replace_callback($pattern, function ($m) {
+            return $m[1] . '<span class="chord">' . $m[2] . '</span>';
+        }, $escaped);
     }
 }
