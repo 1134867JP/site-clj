@@ -64,13 +64,18 @@
 
                     <x-slot name="content">
                         <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
+                            {{ __('Perfil') }}
                         </x-dropdown-link>
+                        @can('create', App\Models\CantoTipo::class)
+                        <x-dropdown-link :href="route('settings.general')" :active="request()->routeIs('settings.general')">
+                            {{ __('Configurações') }}
+                        </x-dropdown-link>
+                        @endcan
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
                                 onclick="event.preventDefault(); this.closest('form').submit();">
-                                {{ __('Log Out') }}
+                                {{ __('Sair') }}
                             </x-dropdown-link>
                         </form>
                     </x-slot>
@@ -99,11 +104,19 @@
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden dark:bg-gray-900">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
+                {{ __('Inicial') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('cantos.index')" :active="request()->routeIs('cantos.index')">
+                {{ __('Cantos') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('cantos.selecionar')" :active="request()->routeIs('cantos.selecionar')">
-                {{ __('Selecionar Cantos') }}
+                {{ __('Gerar PDF') }}
             </x-responsive-nav-link>
+            @can('create', App\Models\CantoTipo::class)
+            <x-responsive-nav-link :href="route('settings.general')" :active="request()->routeIs('settings.general')">
+                {{ __('Configurações') }}
+            </x-responsive-nav-link>
+            @endcan
         </div>
 
         <!-- Responsive Settings Options -->
@@ -118,7 +131,7 @@
                     @csrf
                     <x-responsive-nav-link :href="route('logout')"
                         onclick="event.preventDefault(); this.closest('form').submit();">
-                        {{ __('Log Out') }}
+                        {{ __('Sair') }}
                     </x-responsive-nav-link>
                 </form>
             </div>

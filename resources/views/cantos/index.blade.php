@@ -63,13 +63,13 @@
                     </a>
 
                     @foreach ($tipos as $tipo)
-                        @php $active = request('tipo') === $tipo; @endphp
-                        <a href="{{ request()->fullUrlWithQuery(['tipo' => $tipo]) }}"
+                        @php $active = request('tipo') === $tipo->nome || (string)request('tipo') === (string)$tipo->id; @endphp
+                        <a href="{{ request()->fullUrlWithQuery(['tipo' => $tipo->nome]) }}"
                            class="px-4 py-2 rounded-full border font-semibold transition text-sm
                            {{ $active
                                ? 'bg-blue-600 text-white border-blue-600'
                                : 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700' }}">
-                            {{ $tipo }}
+                            {{ $tipo->nome }}
                         </a>
                     @endforeach
                 </div>
@@ -124,7 +124,7 @@
                             </div>
 
                             <div class="text-sm text-gray-500 dark:text-gray-400">
-                                {{ $canto->tipo }}
+                                {{ optional($canto->tipo)->nome }}
                                 @if(!empty($canto->guia))
                                     • {{ $canto->guia }}
                                 @endif
@@ -164,8 +164,12 @@
                         </div>
                         <p class="text-gray-600 dark:text-gray-300 font-medium">Nenhum canto encontrado.</p>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
-                            Tente ajustar os filtros ou
-                            <a class="text-blue-600 dark:text-blue-300 hover:underline" href="{{ route('cantos.create') }}">adicione um novo canto</a>.
+                            Tente ajustar os filtros
+                            @can('create', App\Models\Canto::class)
+                                ou
+                                <a class="text-blue-600 dark:text-blue-300 hover:underline" href="{{ route('cantos.create') }}">adicione um novo canto</a>
+                            @endcan
+                            .
                         </p>
                     </div>
                 @endforelse

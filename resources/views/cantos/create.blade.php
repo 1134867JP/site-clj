@@ -1,7 +1,5 @@
 <x-app-layout>
-  @php
-      $tipos = ['Entrada', 'Ato Penitencial', 'Glória', 'Ofertório', 'Santo', 'Cordeiro', 'Comunhão', 'Final', 'Abraço da Paz', 'Pai Nosso'];
-  @endphp
+  {{-- tipos agora vêm do controller como coleção de CantoTipo --}}
 
   <div class="max-w-6xl mx-auto py-8 px-4">
     <div class="bg-white dark:bg-slate-900 shadow rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
@@ -48,14 +46,14 @@
 
           <div>
             <label class="block font-semibold mb-1 text-gray-800 dark:text-gray-100">Tipo</label>
-            <select name="tipo" required
+            <select name="canto_tipo_id" required
                     class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
               <option value="">Selecione o tipo</option>
               @foreach($tipos as $tipo)
-                <option value="{{ $tipo }}" @selected(old('tipo')===$tipo)>{{ $tipo }}</option>
+                <option value="{{ $tipo->id }}" @selected(old('canto_tipo_id')==$tipo->id)>{{ $tipo->nome }}</option>
               @endforeach
             </select>
-            @error('tipo')
+            @error('canto_tipo_id')
               <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
           </div>
@@ -156,10 +154,7 @@
       return div.innerHTML;
     }
 
-    // Regex de acordes (apertado e case-sensitive)
-    // Delimitador antes: início/esp./"("
-    // Acorde: [A-G](#|b)? + sufixos/() opcionais + slash chord
-    // Delimitador depois: fim/esp./pontuação, e NÃO pode vir letra minúscula (evita "a", "eu"...)
+    // Regex de acordes
     const chordRe = /(^|[\s(])(\[[A-G](?:#|b)?\]|[A-G](?:#|b)?(?:maj7|maj9|maj11|maj13|m7|m9|m11|m13|maj|min|m|dim|aug|sus2|sus4|add9|add11|add13|6|7|9|11|13)?(?:\([^\)]*\))?(?:\/[A-G](?:#|b)?(?:m|7|9|11|13)?)?)(?=$|\s|[),.;:])(?![a-zà-úâêîôûãõç])/gmu;
 
     function wrapChords(text) {
@@ -187,8 +182,8 @@
   </script>
 
   <style>
-    .chord{ color:#d97706; font-weight:700; }     /* amber-600 */
-    :root.dark .chord{ color:#f59e0b; }           /* amber-500 */
+    .chord{ color:#d97706; font-weight:700; }
+    :root.dark .chord{ color:#f59e0b; }
     code{ background:transparent; }
   </style>
 </x-app-layout>

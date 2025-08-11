@@ -119,34 +119,86 @@
               return array_map('rtrim', $parts);
           }
       }
+      if (!function_exists('transposeChordFull')) {
+          function transposeChordFull($chord, $semitones){
+              $sharp = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+              $flat  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+              $eff   = (($semitones%12)+12)%12;
+
+              // raiz + resto (ex.: G#m7/B)
+              if (!preg_match('/^([A-G][b#]?)(.*)$/u', $chord, $m)) return $chord;
+              $root = $m[1]; $suffix = $m[2] ?? '';
+
+              // transpõe a raiz preservando #/b do input
+              $idx = array_search($root, $sharp); $useSharp = true;
+              if ($idx === false){ $idx = array_search($root, $flat); $useSharp = false; }
+              if ($idx !== false){
+                  $arr  = $useSharp ? $sharp : $flat;
+                  $root = $arr[($idx+$eff)%12];
+              }
+
+              // transpõe baixo /X dentro do sufixo
+              $suffix = preg_replace_callback('/\/([A-G][b#]?)/u', function($mm) use($sharp,$flat,$eff){
+                  $b = $mm[1];
+                  $bi = array_search($b, $sharp); $useS = true;
+                  if ($bi === false){ $bi = array_search($b, $flat); $useS = false; }
+                  if ($bi === false) return '/'.$b;
+                  $arr = $useS ? $sharp : $flat;
+                  return '/'.$arr[($bi+$eff)%12];
+              }, $suffix);
+
+              return $root.$suffix;
+          }
+      }
+      if (!function_exists('applyTransposeToHtml')) {
+          function applyTransposeToHtml($html, $semitones){
+              $eff = (($semitones%12)+12)%12;
+              if ($eff === 0) return $html;
+              return preg_replace_callback('/<span class="chord">([^<]+)<\/span>/u', function($m) use($eff){
+                  return '<span class="chord">'.transposeChordFull($m[1], $eff).'</span>';
+              }, $html);
+          }
+      }
     @endphp
 
-    @php $i = 1; @endphp
+    @php $prefsById = $prefsById ?? []; @endphp
+
     @forelse ($cantos as $canto)
       @php
-        $num   = str_pad($i, 2, '0', STR_PAD_LEFT);
-        $tipo  = strtoupper($canto->tipo ?? '');
-        $tit   = strtoupper($canto->titulo ?? '');
-        $tom   = keyFromLetra($canto->letra);
-        $ritmo = $canto->ritmo ?? null;
-        $meta  = trim(($tom ? "Tom: {$tom}" : '').($tom && $ritmo ? ' | ' : '').($ritmo ? "Ritmo: {$ritmo}" : ''));
+        $pref = $prefsById[$canto->id] ?? null;
+        $off  = (int)($pref['offset'] ?? 0);
+        $cap  = (int)($pref['capo']   ?? 0);
+
+        $tomBase  = keyFromLetra($canto->letra);
+        $tomFinal = $tomBase ? transposeChordFull($tomBase, $off) : null;
+
+        $tipo = strtoupper(optional($canto->tipo)->nome ?? '');
+        $tit  = strtoupper($canto->titulo ?? '');
+
+        $metaParts = [];
+        if($tomFinal) $metaParts[] = "Tom: {$tomFinal}";
+        if($cap)      $metaParts[] = "Capo: {$cap}";
+        if($canto->ritmo) $metaParts[] = "Ritmo: {$canto->ritmo}";
+        $meta = implode(' | ', $metaParts);
+
         $estrofes = splitEstrofes($canto->letra);
       @endphp
 
       <div class="canto">
         <div class="titulo">
-          {{ $num }} - {{ $tipo }} – {{ $tit }}@if($meta) ({{ $meta }})@endif
+          {{ sprintf('%02d', $loop->iteration) }} - {{ $tipo }} – {{ $tit }}@if($meta) ({{ $meta }})@endif
         </div>
 
         <div class="letra">
-          @php $letra = $canto->letra_pdf ?? null; @endphp
-          @foreach ($estrofes as $idx => $stanza)
-            <pre class="estrofe">{!! $letra ? $letra : formatChordSpans($stanza) !!}</pre>
+          @foreach ($estrofes as $stanza)
+            @php
+              $html = formatChordSpans($stanza);
+              $html = applyTransposeToHtml($html, $off);
+            @endphp
+            <pre class="estrofe">{!! $html !!}</pre>
           @endforeach
         </div>
       </div>
-
-      @php $i++; @endphp
     @empty
       <p style="text-align:center;color:#64748b;">Nenhum canto selecionado.</p>
     @endforelse

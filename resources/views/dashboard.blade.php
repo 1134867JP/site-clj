@@ -24,14 +24,9 @@
 
       <!-- Busca -->
       <div class="mt-8">
-        <form action="{{ route('cantos.index') }}" method="GET"
-              class="relative">
-          <input
-            type="text"
-            name="q"
-            placeholder="Buscar cantos por título, parte da missa ou tom…"
-            class="w-full rounded-2xl border border-slate-200/70 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 backdrop-blur px-5 py-4 pr-12 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-400 dark:text-slate-100"
-          />
+        <form action="{{ route('cantos.index') }}" method="GET" class="relative">
+          <input type="text" name="q" placeholder="Buscar cantos por título, parte da missa ou tom…"
+                 class="w-full rounded-2xl border border-slate-200/70 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 backdrop-blur px-5 py-4 pr-12 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-400 dark:text-slate-100" />
           <button class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-500 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z"/>
@@ -41,7 +36,7 @@
       </div>
 
       <!-- Cards de Métricas -->
-      <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="group rounded-2xl bg-white/80 dark:bg-slate-900/60 backdrop-blur border border-slate-200/70 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition">
           <div class="flex items-center justify-between">
             <p class="text-sm text-slate-500 dark:text-slate-400">Total de Cantos</p>
@@ -67,19 +62,6 @@
             </svg>
           </div>
         </div>
-
-        <div class="group rounded-2xl bg-white/80 dark:bg-slate-900/60 backdrop-blur border border-slate-200/70 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition">
-          <div class="flex items-center justify-between">
-            <p class="text-sm text-slate-500 dark:text-slate-400">Seleções p/ Missa</p>
-            <span class="rounded-lg bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-900/40 dark:text-fuchsia-300 px-2 py-1 text-xs font-semibold">Hoje</span>
-          </div>
-          <div class="mt-3 flex items-end justify-between">
-            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-100">{{ $qtSelecoes ?? '—' }}</h3>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-fuchsia-500/80" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 7v10m-5-5h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-        </div>
       </div>
 
       <!-- Ações rápidas -->
@@ -97,7 +79,7 @@
           </div>
         </a>
 
-        @if (Route::has('cantos.create'))
+        @can('create', App\Models\Canto::class)
         <a href="{{ route('cantos.create') }}"
            class="rounded-2xl bg-white/80 dark:bg-slate-900/60 backdrop-blur border border-slate-200/70 dark:border-slate-700 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition flex items-center gap-3">
           <div class="rounded-xl p-3 bg-emerald-100 dark:bg-emerald-900/40">
@@ -110,10 +92,10 @@
             <p class="text-sm text-slate-500 dark:text-slate-400">Cadastrar música</p>
           </div>
         </a>
-        @endif
+        @endcan
 
-        @if (Route::has('categorias.index'))
-        <a href="{{ route('categorias.index') }}"
+        @can('create', App\Models\CantoTipo::class)
+        <a href="{{ route('settings.general') }}"
            class="rounded-2xl bg-white/80 dark:bg-slate-900/60 backdrop-blur border border-slate-200/70 dark:border-slate-700 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition flex items-center gap-3">
           <div class="rounded-xl p-3 bg-amber-100 dark:bg-amber-900/40">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-600 dark:text-amber-300" viewBox="0 0 24 24" fill="currentColor">
@@ -121,14 +103,13 @@
             </svg>
           </div>
           <div>
-            <p class="font-semibold text-slate-800 dark:text-slate-100">Categorias</p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">Organizar por guia</p>
+            <p class="font-semibold text-slate-800 dark:text-slate-100">Configurações</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Tipos de músicas</p>
           </div>
         </a>
-        @endif
+        @endcan
 
-        @if (Route::has('selecao.index'))
-        <a href="{{ route('selecao.index') }}"
+        <a href="{{ route('cantos.selecionar') }}"
            class="rounded-2xl bg-white/80 dark:bg-slate-900/60 backdrop-blur border border-slate-200/70 dark:border-slate-700 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition flex items-center gap-3">
           <div class="rounded-xl p-3 bg-fuchsia-100 dark:bg-fuchsia-900/40">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-fuchsia-600 dark:text-fuchsia-300" viewBox="0 0 24 24" fill="currentColor">
@@ -140,7 +121,33 @@
             <p class="text-sm text-slate-500 dark:text-slate-400">Montar repertório</p>
           </div>
         </a>
-        @endif
+      </div>
+
+      <!-- Últimos adicionados -->
+      <div class="mt-12">
+        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-3">Últimos adicionados</h2>
+        <div class="rounded-2xl bg-white/80 dark:bg-slate-900/60 backdrop-blur border border-slate-200/70 dark:border-slate-700 p-4">
+          @if(!empty($recentCantos) && count($recentCantos))
+            <ul class="divide-y divide-slate-200/70 dark:divide-slate-700">
+              @foreach($recentCantos as $rc)
+                <li class="py-3 flex items-center justify-between gap-3">
+                  <div>
+                    <a href="{{ route('cantos.show', $rc) }}" class="font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">{{ $rc->titulo }}</a>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ optional($rc->tipo)->nome ?: '—' }} • {{ $rc->created_at?->format('d/m/Y') }}</div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <a href="{{ route('cantos.show', $rc) }}" class="px-2 py-1 text-xs rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Abrir</a>
+                    @can('update',$rc)
+                    <a href="{{ route('cantos.edit', $rc) }}" class="px-2 py-1 text-xs rounded-lg bg-amber-500 text-white hover:bg-amber-600">Editar</a>
+                    @endcan
+                  </div>
+                </li>
+              @endforeach
+            </ul>
+          @else
+            <p class="text-sm text-slate-500 dark:text-slate-400">Sem itens recentes.</p>
+          @endif
+        </div>
       </div>
 
       <!-- Dicas / Atalhos -->

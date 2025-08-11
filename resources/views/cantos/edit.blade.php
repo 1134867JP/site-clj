@@ -43,16 +43,15 @@
                    class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
           </div>
 
-          @php
-              $tipos = ['Entrada', 'Ato Penitencial', 'Glória', 'Ofertório', 'Santo', 'Cordeiro', 'Comunhão', 'Final', 'Abraço da Paz', 'Pai Nosso'];
-          @endphp
           <div>
             <label class="block font-semibold mb-1 text-gray-800 dark:text-gray-100">Tipo</label>
-            <select name="tipo" required
+            <select name="canto_tipo_id" required
                     class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
               <option value="">Selecione o tipo</option>
               @foreach($tipos as $tipo)
-                <option value="{{ $tipo }}" {{ old('tipo', $canto->tipo ?? '') == $tipo ? 'selected' : '' }}>{{ $tipo }}</option>
+                <option value="{{ $tipo->id }}" {{ (string)old('canto_tipo_id', $canto->canto_tipo_id) === (string)$tipo->id ? 'selected' : '' }}>
+                  {{ $tipo->nome }}
+                </option>
               @endforeach
             </select>
           </div>
@@ -111,9 +110,6 @@
     const contador  = document.getElementById('contador');
     const keyDetect = document.getElementById('key-detect');
 
-    const notesSharp = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-    const notesFlat  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
-
     function detectKey(text) {
       const m = text.match(/^\s*(?:\[)?([A-G][b#]?)/m);
       return m ? m[1] : 'C';
@@ -138,33 +134,25 @@
     function updatePreview() {
       const val = textarea.value;
       preview.innerHTML = wrapChords(val);
-      // contador
       const linhas = val.length ? val.split(/\r?\n/).length : 0;
       contador.textContent = `${val.length} chars • ${linhas} linhas`;
-      // key
       keyDetect.textContent = detectKey(val);
     }
 
-    // Helpers experimentais (opcionais)
     document.getElementById('btn-formatar').addEventListener('click', () => {
-      // remove espaços em branco no fim das linhas e normaliza \n
       textarea.value = textarea.value.replace(/[ \t]+$/gm, '').replace(/\r\n/g, '\n');
       updatePreview();
     });
 
     document.getElementById('btn-simplificar').addEventListener('click', () => {
-      // troca notas bemólicas por sustenidas equivalentes (bem simples)
       const map = { 'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#' };
       textarea.value = textarea.value.replace(/\b(C#|Db|D#|Eb|F#|Gb|G#|Ab|A#|Bb)\b/g, (m) => map[m] ?? m);
       updatePreview();
     });
 
-    // Atualiza em tempo real
     textarea.addEventListener('input', updatePreview);
-    // init
     updatePreview();
 
-    // Atalho Ctrl/Cmd+S para enviar form
     window.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
@@ -174,8 +162,8 @@
   </script>
 
   <style>
-    .chord{ color:#d97706; font-weight:700; }      /* amber-600 */
-    :root.dark .chord{ color:#f59e0b; }            /* amber-500 */
+    .chord{ color:#d97706; font-weight:700; }
+    :root.dark .chord{ color:#f59e0b; }
     code{ background:transparent; }
   </style>
 </x-app-layout>

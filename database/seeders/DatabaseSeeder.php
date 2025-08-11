@@ -19,5 +19,10 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Tipos de músicas padrão
+        $this->call([
+            CantoTipoSeeder::class,
+        ]);
     }
 }
