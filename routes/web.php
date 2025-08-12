@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CantosController;
 use App\Http\Controllers\Settings\CantoTipoController;
+use App\Http\Controllers\FeedbackController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -50,6 +51,14 @@ Route::middleware('auth')->group(function () {
             Route::delete('/tipos/{tipo}', [CantoTipoController::class, 'destroy'])->name('tipos.destroy');
         });
     });
+
+    // Admin-only: Feedbacks (via policy)
+    Route::middleware('can:viewAny,App\\Models\\Feedback')->prefix('settings')->name('settings.')->group(function () {
+        Route::get('/feedback', [\App\Http\Controllers\Settings\FeedbackAdminController::class, 'index'])->name('feedback.index');
+    });
 });
+
+// Endpoint público para feedback (não exige login)
+Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
 
 require __DIR__.'/auth.php';

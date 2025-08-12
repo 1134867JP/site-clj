@@ -160,6 +160,9 @@ class CantosController extends Controller
     public function gerarPDF(Request $request)
     {
         $ids = (array) $request->input('ids', []);
+        $ids = array_map('intval', $ids);
+        $ids = array_values(array_filter($ids));
+
         $cantos = Canto::with('tipos')->whereIn('id', $ids)->get();
 
         if ($cantos->isEmpty()) {
@@ -169,9 +172,14 @@ class CantosController extends Controller
         // Lê prefs seguras (offset 0..11 / capo 0..12) vindas via base64url
         $prefsById = $this->readPrefsFromBase64Url((string) $request->input('prefs', ''));
 
+        // Layout: 1 ou 2 colunas (padrão 2 colunas, compacto)
+        $cols = (int) $request->input('cols', 2);
+        $cols = max(1, min(2, $cols));
+
         $pdf = Pdf::loadView('cantos.pdf', [
             'cantos'    => $cantos,
             'prefsById' => $prefsById,
+            'cols'      => $cols,
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download('cantos_missa_clj.pdf');

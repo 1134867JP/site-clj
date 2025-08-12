@@ -5,10 +5,10 @@
       <div class="flex items-center justify-between gap-4">
         <div>
           <h1 class="text-3xl font-extrabold tracking-tight text-indigo-700 dark:text-indigo-300">
-            Bem-vindo ao Painel
+            Bem-vindo ao CifraDocs
           </h1>
           <p class="mt-1 text-slate-600 dark:text-slate-300">
-            {{ __('Você está logado com sucesso!') }}
+            {{ __('Acesse todos os cantos e gere PDF para suas missas!') }}
           </p>
         </div>
 
@@ -174,5 +174,7 @@
         Feito com ❤️ — {{ config('app.name') }}
       </div>
     </div>
+
+    @include('partials.feedback-form')
   </div>
 </x-app-layout>

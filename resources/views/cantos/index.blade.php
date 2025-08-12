@@ -53,20 +53,37 @@
                         />
                     </form>
 
-                    <!-- Chips de filtro -->
+                    <!-- Chips de filtro (multi-seleção) -->
+                    @php
+                        $paramTipo = request()->input('tipo');
+                        $sel = is_array($paramTipo)
+                            ? array_values(array_unique(array_filter($paramTipo)))
+                            : array_values(array_unique(array_filter(array_map('trim', explode(',', (string) $paramTipo)))));
+                        $selSet = array_flip($sel);
+                    @endphp
+
                     <a href="{{ request()->fullUrlWithQuery(['tipo'=>null]) }}"
                        class="px-4 py-2 rounded-full border font-semibold transition text-sm
-                       {{ !request('tipo')
+                       {{ empty($sel)
                            ? 'bg-blue-600 text-white border-blue-600'
                            : 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700' }}">
                         Todos
                     </a>
 
                     @foreach ($tipos as $tipo)
-                        @php $active = request('tipo') === $tipo->nome || (string)request('tipo') === (string)$tipo->id; @endphp
-                        <a href="{{ request()->fullUrlWithQuery(['tipo' => $tipo->nome]) }}"
+                        @php
+                            $isActive = isset($selSet[(string)$tipo->id]) || isset($selSet[$tipo->nome]);
+                            $next = $sel;
+                            if ($isActive) {
+                                $next = array_values(array_filter($next, fn($v) => $v !== (string)$tipo->id && $v !== $tipo->nome));
+                            } else {
+                                $next[] = (string)$tipo->id; // usa id para estabilidade
+                            }
+                            $query = ['tipo' => $next ? implode(',', $next) : null];
+                        @endphp
+                        <a href="{{ request()->fullUrlWithQuery($query) }}"
                            class="px-4 py-2 rounded-full border font-semibold transition text-sm
-                           {{ $active
+                           {{ $isActive
                                ? 'bg-blue-600 text-white border-blue-600'
                                : 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700' }}">
                             {{ $tipo->nome }}
@@ -79,7 +96,7 @@
         <!-- Lista estilo ranking -->
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow p-8">
             <div class="flex items-center justify-between mb-6">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Mais acessados</h1>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Todos os Cantos</h1>
 
                 @if(method_exists($cantos, 'total'))
                     <span class="text-xs px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800">

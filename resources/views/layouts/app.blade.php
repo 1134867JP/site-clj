@@ -44,6 +44,15 @@
             <main class="min-h-[calc(100vh-4rem)]">
                 {{ $slot }}
             </main>
+
+            @if (session('success'))
+                <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3500)"
+                     class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-xl bg-green-600 text-white shadow">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            <!-- Feedback form moved to dashboard only -->
         </div>
     </body>
 </html>

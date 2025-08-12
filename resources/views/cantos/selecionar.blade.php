@@ -4,31 +4,73 @@
         x-init="init()"
         class="max-w-6xl mx-auto py-8 px-4"
     >
+        {{-- Mantém o form apenas para enviar seleção ao PDF --}}
         <form method="GET" action="{{ route('cantos.pdf') }}" @submit="prepareAndSubmit($event)">
             <!-- Filtros / Ações -->
             <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-                <div class="flex items-center gap-3">
-                    <label for="tipo" class="font-semibold text-gray-800 dark:text-gray-100">Filtrar por tipo:</label>
-                    <select name="tipo" id="tipo" onchange="this.form.submit()"
-                            class="w-full md:w-auto border border-blue-300 dark:border-slate-600 rounded-xl px-3 py-2 bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-                        <option value="">Todos</option>
-                        @foreach ($tipos as $tipo)
-                            <option value="{{ $tipo->nome }}" {{ request('tipo') == $tipo->nome ? 'selected' : '' }}>{{ $tipo->nome }}</option>
-                        @endforeach
-                    </select>
-                </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-semibold text-gray-800 dark:text-gray-100">Filtrar por tipo:</span>
 
-                <div class="md:col-span-2 flex items-center justify-between gap-3">
-                    <div class="flex-1">
-                        <input type="text" name="q" value="{{ request('q') }}" placeholder="Buscar por título…"
-                               class="w-full rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500">
-                    </div>
+                @php
+                  $paramTipo = request()->input('tipo');
+                  $sel = is_array($paramTipo)
+                      ? array_values(array_unique(array_filter($paramTipo)))
+                      : array_values(array_unique(array_filter(array_map('trim', explode(',', (string) $paramTipo)))));
+                  $selSet = array_flip($sel);
+                @endphp
 
-                    <button type="submit" formaction="{{ route('cantos.selecionar') }}"
-                            class="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-semibold text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-slate-700">
-                        Filtrar
-                    </button>
-                </div>
+                <a href="{{ request()->fullUrlWithQuery(['tipo'=>null]) }}"
+                   class="px-3 py-1.5 rounded-full border text-sm font-semibold transition
+                          {{ empty($sel)
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700' }}">
+                  Todos
+                </a>
+
+                @foreach ($tipos as $tipo)
+                  @php
+                    $isActive = isset($selSet[(string)$tipo->id]) || isset($selSet[$tipo->nome]);
+                    $next = $sel;
+                    if ($isActive) {
+                      $next = array_values(array_filter($next, fn($v) => $v !== (string)$tipo->id && $v !== $tipo->nome));
+                    } else {
+                      $next[] = (string)$tipo->id;
+                    }
+                    $query = ['tipo' => $next ? implode(',', $next) : null];
+                  @endphp
+                  <a href="{{ request()->fullUrlWithQuery($query) }}"
+                     class="px-3 py-1.5 rounded-full border text-sm font-semibold transition
+                            {{ $isActive
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700' }}">
+                    {{ $tipo->nome }}
+                  </a>
+                @endforeach
+              </div>
+
+              <!-- Pesquisa -->
+              <div class="md:col-span-2 flex items-center justify-end gap-2">
+                <input
+                  type="text"
+                  x-model="search"
+                  @keydown.enter.prevent="applySearch()"
+                  placeholder="Buscar por título…"
+                  class="w-full md:w-80 h-10 rounded-xl border border-gray-200 dark:border-slate-600
+                         bg-white dark:bg-slate-800 px-3 text-sm text-gray-700 dark:text-gray-200
+                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                <button type="button"
+                        @click="applySearch()"
+                        class="px-3 h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">
+                  Buscar
+                </button>
+                <button type="button"
+                        @click="clearSearch()"
+                        class="px-3 h-10 rounded-xl border border-gray-200 dark:border-slate-600
+                               bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-slate-700">
+                  Limpar
+                </button>
+              </div>
             </div>
 
             <!-- Barra de seleção -->
@@ -197,11 +239,7 @@
         $baseMap = $cantos->mapWithKeys(function($c){
             $base = $c->tom ?: \App\Http\Controllers\CantosController::getKeyFromLetra($c->letra);
             if (!preg_match('/^[A-G][b#]?$/', (string)$base)) {
-                if (preg_match('/^([A-G][b#]?)/', (string)$base, $m)) {
-                    $base = $m[1];
-                } else {
-                    $base = 'C';
-                }
+                $base = null;
             }
             return [$c->id => $base];
         });
@@ -239,6 +277,7 @@
             allOnPageChecked: false,
             idsOnPage: @json($cantos->pluck('id')),
             prefs: {},
+            search: @json(request('q', '')),
 
             // tom base normalizado por id
             baseMap: @json($baseMap),
@@ -324,6 +363,19 @@
               const v = this.getPref(id).offset;
               const pretty = v > 6 ? v - 12 : v;
               return (pretty >= 0 ? '+' : '') + pretty;
+            },
+
+            applySearch() {
+              const v = (this.search || '').trim();
+              const params = new URLSearchParams(window.location.search);
+              if (v) params.set('q', v); else params.delete('q');
+              params.delete('page');
+              window.location = `${window.location.pathname}?${params.toString()}`;
+            },
+
+            clearSearch() {
+              this.search = '';
+              this.applySearch();
             },
 
             prepareAndSubmit($event) {

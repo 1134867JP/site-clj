@@ -71,6 +71,11 @@
                             {{ __('Configurações') }}
                         </x-dropdown-link>
                         @endcan
+                        @can('viewAny', App\Models\Feedback::class)
+                        <x-dropdown-link :href="route('settings.feedback.index')" :active="request()->routeIs('settings.feedback.index')">
+                            {{ __('Feedbacks do site') }}
+                        </x-dropdown-link>
+                        @endcan
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
@@ -115,6 +120,11 @@
             @can('create', App\Models\CantoTipo::class)
             <x-responsive-nav-link :href="route('settings.general')" :active="request()->routeIs('settings.general')">
                 {{ __('Configurações') }}
+            </x-responsive-nav-link>
+            @endcan
+            @can('admin')
+            <x-responsive-nav-link :href="route('settings.feedback.index')" :active="request()->routeIs('settings.feedback.index')">
+                {{ __('Feedbacks do site') }}
             </x-responsive-nav-link>
             @endcan
         </div>
