@@ -133,7 +133,9 @@
                 <li class="py-3 flex items-center justify-between gap-3">
                   <div>
                     <a href="{{ route('cantos.show', $rc) }}" class="font-semibold text-indigo-700 dark:text-indigo-300 hover:underline">{{ $rc->titulo }}</a>
-                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ optional($rc->tipo)->nome ?: '—' }} • {{ $rc->created_at?->format('d/m/Y') }}</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                      {{ $rc->tipos->pluck('nome')->join(', ') ?: '—' }} • {{ $rc->created_at?->format('d/m/Y') }}
+                    </div>
                   </div>
                   <div class="flex items-center gap-2">
                     <a href="{{ route('cantos.show', $rc) }}" class="px-2 py-1 text-xs rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Abrir</a>

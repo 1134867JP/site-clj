@@ -44,16 +44,23 @@
           </div>
 
           <div>
-            <label class="block font-semibold mb-1 text-gray-800 dark:text-gray-100">Tipo</label>
-            <select name="canto_tipo_id" required
-                    class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-              <option value="">Selecione o tipo</option>
-              @foreach($tipos as $tipo)
-                <option value="{{ $tipo->id }}" {{ (string)old('canto_tipo_id', $canto->canto_tipo_id) === (string)$tipo->id ? 'selected' : '' }}>
-                  {{ $tipo->nome }}
-                </option>
-              @endforeach
-            </select>
+            <label class="block font-semibold mb-1 text-gray-800 dark:text-gray-100">Tipos</label>
+            <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2">
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                @php $selecionados = old('tipos', $canto->tipos->pluck('id')->all()); @endphp
+                @foreach($tipos as $tipo)
+                  <label class="inline-flex items-center gap-2 text-sm text-gray-800 dark:text-gray-100">
+                    <input type="checkbox" name="tipos[]" value="{{ $tipo->id }}"
+                           @checked(in_array($tipo->id, $selecionados))
+                           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span>{{ $tipo->nome }}</span>
+                  </label>
+                @endforeach
+              </div>
+            </div>
+            @error('tipos')
+              <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            @enderror
           </div>
 
           <div>

@@ -89,7 +89,7 @@
 
                                 <!-- Tipo -->
                                 <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
-                                    {{ optional($canto->tipo)->nome }}
+                                    {{ $canto->tipos->pluck('nome')->join(', ') }}
                                 </td>
 
                                 <!-- Tom (alvo) -->

@@ -13,7 +13,7 @@ Route::get('/dashboard', function () {
     $qtCantos     = \App\Models\Canto::count();
     $qtCategorias = \App\Models\CantoTipo::count();
     $qtComTom     = \App\Models\Canto::whereNotNull('tom')->where('tom', '<>', '')->count();
-    $recentCantos = \App\Models\Canto::with('tipo')->orderByDesc('created_at')->limit(5)->get();
+    $recentCantos = \App\Models\Canto::with('tipos')->orderByDesc('created_at')->limit(5)->get();
 
     return view('dashboard', compact('qtCantos','qtCategorias','qtComTom','recentCantos'));
 })->middleware(['auth', 'verified'])->name('dashboard');

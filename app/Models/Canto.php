@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Canto extends Model
 {
-    protected $fillable = ['titulo', 'letra', 'notas', 'tom', 'canto_tipo_id'];
+    protected $fillable = ['titulo', 'letra', 'notas', 'tom'];
 
-    public function tipo()
+    public function tipos()
     {
-        return $this->belongsTo(CantoTipo::class, 'canto_tipo_id');
+        return $this->belongsToMany(CantoTipo::class, 'canto_canto_tipo', 'canto_id', 'canto_tipo_id');
     }
 }

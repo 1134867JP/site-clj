@@ -124,7 +124,7 @@
                             </div>
 
                             <div class="text-sm text-gray-500 dark:text-gray-400">
-                                {{ optional($canto->tipo)->nome }}
+                                {{ $canto->tipos->pluck('nome')->join(', ') }}
                                 @if(!empty($canto->guia))
                                     • {{ $canto->guia }}
                                 @endif

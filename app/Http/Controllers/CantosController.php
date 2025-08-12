@@ -17,16 +17,18 @@ class CantosController extends Controller
     {
         $tipos = CantoTipo::orderBy('ord')->orderBy('nome')->get();
 
-        $query = Canto::query()->with('tipo');
+        $query = Canto::query()->with('tipos');
 
-        // filtro por tipo: aceita id ou nome para retrocompatibilidade
+        // filtro por um ou mais tipos (id ou nome)
         if ($request->filled('tipo')) {
             $tipoParam = $request->input('tipo');
-            if (ctype_digit((string) $tipoParam)) {
-                $query->where('canto_tipo_id', (int) $tipoParam);
-            } else {
-                $query->whereHas('tipo', function ($q) use ($tipoParam) {
-                    $q->where('nome', $tipoParam);
+            $tiposFiltro = is_array($tipoParam) ? $tipoParam : explode(',', (string)$tipoParam);
+            $tiposFiltro = array_filter(array_map('trim', $tiposFiltro));
+
+            if ($tiposFiltro) {
+                $query->whereHas('tipos', function ($q) use ($tiposFiltro) {
+                    $q->whereIn('canto_tipos.id', array_filter($tiposFiltro, 'ctype_digit'))
+                      ->orWhereIn('canto_tipos.nome', $tiposFiltro);
                 });
             }
         }
@@ -56,18 +58,26 @@ class CantosController extends Controller
 
         $validated = $request->validate([
             'titulo'        => 'required|string|max:255',
-            'canto_tipo_id' => ['required', 'exists:canto_tipos,id'],
             'letra'         => 'required|string',
+            'tipos'         => ['required','array','min:1'],
+            'tipos.*'       => ['integer','exists:canto_tipos,id'],
         ]);
 
-        Canto::create($validated);
+        $canto = Canto::create([
+            'titulo' => $validated['titulo'],
+            'letra'  => $validated['letra'],
+            'notas'  => $request->input('notas'),
+            'tom'    => $request->input('tom'),
+        ]);
+
+        $canto->tipos()->sync($validated['tipos']);
 
         return redirect()->route('cantos.index')->with('success', 'Canto criado com sucesso!');
     }
 
     public function show($id)
     {
-        $canto = Canto::with('tipo')->findOrFail($id);
+        $canto = Canto::with('tipos')->findOrFail($id);
         $key   = self::getKeyFromLetra($canto->letra);
 
         return view('cantos.show', compact('canto', 'key'));
@@ -75,7 +85,7 @@ class CantosController extends Controller
 
     public function edit($id)
     {
-        $canto = Canto::with('tipo')->findOrFail($id);
+        $canto = Canto::with('tipos')->findOrFail($id);
         $this->authorize('update', $canto);
 
         $tipos = CantoTipo::orderBy('ord')->orderBy('nome')->get();
@@ -89,12 +99,20 @@ class CantosController extends Controller
         $this->authorize('update', $canto);
 
         $validated = $request->validate([
-            'titulo'        => 'required|string|max:255',
-            'canto_tipo_id' => ['required', 'exists:canto_tipos,id'],
-            'letra'         => 'required|string',
+            'titulo'  => 'required|string|max:255',
+            'letra'   => 'required|string',
+            'tipos'   => ['required','array','min:1'],
+            'tipos.*' => ['integer','exists:canto_tipos,id'],
         ]);
 
-        $canto->update($validated);
+        $canto->update([
+            'titulo' => $validated['titulo'],
+            'letra'  => $validated['letra'],
+            'notas'  => $request->input('notas'),
+            'tom'    => $request->input('tom'),
+        ]);
+
+        $canto->tipos()->sync($validated['tipos']);
 
         return redirect()->route('cantos.index')->with('success', 'Canto atualizado com sucesso!');
     }
@@ -114,15 +132,16 @@ class CantosController extends Controller
     {
         $tipos = CantoTipo::orderBy('ord')->orderBy('nome')->get();
 
-        $query = Canto::query()->with('tipo');
+        $query = Canto::query()->with('tipos');
 
         if ($request->filled('tipo')) {
             $tipoParam = $request->input('tipo');
-            if (ctype_digit((string) $tipoParam)) {
-                $query->where('canto_tipo_id', (int) $tipoParam);
-            } else {
-                $query->whereHas('tipo', function ($q) use ($tipoParam) {
-                    $q->where('nome', $tipoParam);
+            $tiposFiltro = is_array($tipoParam) ? $tipoParam : explode(',', (string)$tipoParam);
+            $tiposFiltro = array_filter(array_map('trim', $tiposFiltro));
+            if ($tiposFiltro) {
+                $query->whereHas('tipos', function ($q) use ($tiposFiltro) {
+                    $q->whereIn('canto_tipos.id', array_filter($tiposFiltro, 'ctype_digit'))
+                      ->orWhereIn('canto_tipos.nome', $tiposFiltro);
                 });
             }
         }
@@ -141,7 +160,7 @@ class CantosController extends Controller
     public function gerarPDF(Request $request)
     {
         $ids = (array) $request->input('ids', []);
-        $cantos = Canto::with('tipo')->whereIn('id', $ids)->get();
+        $cantos = Canto::with('tipos')->whereIn('id', $ids)->get();
 
         if ($cantos->isEmpty()) {
             return redirect()->route('cantos.index')->with('error', 'Nenhum canto selecionado.');

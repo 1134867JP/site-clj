@@ -71,18 +71,21 @@
       <tr>
         <td class="h-left">
           @php
-            $logoLeft = str_replace('\\','/', public_path('storage/images/clj_logo_left.png'));
+            // Caminho real para checagem e URI file:// para o Dompdf
+            $logoLeftPath = public_path('storage/images/clj_logo_left.png');
+            $logoLeft = 'file://'.str_replace('\\','/', $logoLeftPath);
           @endphp
-          @if (file_exists($logoLeft))
+          @if (file_exists($logoLeftPath))
             <img class="logo" src="{{ $logoLeft }}" alt="CLJ">
           @endif
         </td>
         <td class="brand">CANTOS MISSA CLJ</td>
         <td class="h-right">
           @php
-            $logoRight = str_replace('\\','/', public_path('storage/images/clj_logo_right.png'));
+            $logoRightPath = public_path('storage/images/clj_logo_right.png');
+            $logoRight = 'file://'.str_replace('\\','/', $logoRightPath);
           @endphp
-          @if (file_exists($logoRight))
+          @if (file_exists($logoRightPath))
             <img class="logo" src="{{ $logoRight }}" alt="CLJ">
           @endif
         </td>
@@ -172,7 +175,7 @@
         $tomBase  = keyFromLetra($canto->letra);
         $tomFinal = $tomBase ? transposeChordFull($tomBase, $off) : null;
 
-        $tipo = strtoupper(optional($canto->tipo)->nome ?? '');
+        $tipo = strtoupper($canto->tipos->pluck('nome')->join(', ') ?? '');
         $tit  = strtoupper($canto->titulo ?? '');
 
         $metaParts = [];
