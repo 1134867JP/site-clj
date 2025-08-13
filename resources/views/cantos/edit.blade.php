@@ -1,12 +1,12 @@
 <x-app-layout>
   <div class="max-w-6xl mx-auto py-8 px-4">
-    <div class="bg-white dark:bg-slate-900 shadow rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
+    <div class="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl shadow-2xl rounded-2xl border border-white/10 overflow-hidden">
       <div class="px-6 pt-6 pb-2 flex items-center justify-between gap-4">
         <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">Editar Canto</h1>
 
         <div class="flex items-center gap-2">
           <a href="{{ route('cantos.index') }}"
-             class="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-slate-700">
+             class="px-3 py-2 rounded-xl border border-white/10 bg-white/30 dark:bg-white/10 text-gray-700 dark:text-gray-100 hover:bg-white/40 dark:hover:bg-white/20 backdrop-blur">
             Cancelar
           </a>
           <button form="form-canto" type="submit"
@@ -78,6 +78,21 @@
             </div>
           </div>
 
+          <div>
+            <label class="block font-semibold mb-1 text-gray-800 dark:text-gray-100">Tom <span class="text-gray-500 dark:text-gray-400 font-normal text-sm">(opcional)</span></label>
+            @php $tomVal = old('tom', $canto->tom); @endphp
+            <select name="tom"
+                    class="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+              <option value=""></option>
+              @foreach (['C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B', 'B4'] as $t)
+                <option value="{{ $t }}" @selected($tomVal===$t)>{{ $t }}</option>
+              @endforeach
+            </select>
+            @error('tom')
+              <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+          </div>
+
           <div class="flex items-center justify-between pt-1">
             <div class="text-sm text-gray-500 dark:text-gray-400">
               Tom detectado: <span id="key-detect" class="font-semibold">—</span>
@@ -97,13 +112,13 @@
 
         {{-- PREVIEW --}}
         <div class="mt-6 md:mt-0">
-          <div class="rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-4">
+          <div class="rounded-2xl border border-white/10 bg-white/50 supports-[backdrop-filter]:bg-white/30 dark:bg-white/5 backdrop-blur p-4">
             <div class="flex items-center justify-between mb-2">
               <h2 class="font-semibold text-gray-800 dark:text-gray-100">Preview</h2>
-              <span class="text-xs px-2 py-0.5 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-gray-300">Ao vivo</span>
+              <span class="text-xs px-2 py-0.5 rounded-lg border border-white/10 text-gray-700 dark:text-gray-300">Ao vivo</span>
             </div>
             <pre id="preview"
-                 class="bg-white dark:bg-slate-900 p-4 rounded-lg text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-mono leading-relaxed text-[14px] border border-gray-200 dark:border-slate-800 shadow-inner min-h-[240px]"></pre>
+                 class="bg-white/30 dark:bg-white/5 p-4 rounded-lg text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-mono leading-relaxed text-[14px] border border-white/10 shadow-inner min-h-[240px]"></pre>
           </div>
         </div>
       </div>

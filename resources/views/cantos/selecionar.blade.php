@@ -1,4 +1,11 @@
 <x-app-layout>
+    @php
+        $paramTipo = request()->input('tipo');
+        $selectedTipos = is_array($paramTipo)
+            ? array_values(array_unique(array_filter($paramTipo)))
+            : array_values(array_unique(array_filter(array_map('trim', explode(',', (string) $paramTipo)))));
+    @endphp
+
     <div
         x-data="cantosSel()"
         x-init="init()"
@@ -7,99 +14,118 @@
         {{-- Mantém o form apenas para enviar seleção ao PDF --}}
         <form method="GET" action="{{ route('cantos.pdf') }}" @submit="prepareAndSubmit($event)">
             <!-- Filtros / Ações -->
-            <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="font-semibold text-gray-800 dark:text-gray-100">Filtrar por tipo:</span>
-
-                @php
-                  $paramTipo = request()->input('tipo');
-                  $sel = is_array($paramTipo)
-                      ? array_values(array_unique(array_filter($paramTipo)))
-                      : array_values(array_unique(array_filter(array_map('trim', explode(',', (string) $paramTipo)))));
-                  $selSet = array_flip($sel);
-                @endphp
-
-                <a href="{{ request()->fullUrlWithQuery(['tipo'=>null]) }}"
-                   class="px-3 py-1.5 rounded-full border text-sm font-semibold transition
-                          {{ empty($sel)
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700' }}">
-                  Todos
-                </a>
-
-                @foreach ($tipos as $tipo)
-                  @php
-                    $isActive = isset($selSet[(string)$tipo->id]) || isset($selSet[$tipo->nome]);
-                    $next = $sel;
-                    if ($isActive) {
-                      $next = array_values(array_filter($next, fn($v) => $v !== (string)$tipo->id && $v !== $tipo->nome));
-                    } else {
-                      $next[] = (string)$tipo->id;
-                    }
-                    $query = ['tipo' => $next ? implode(',', $next) : null];
-                  @endphp
-                  <a href="{{ request()->fullUrlWithQuery($query) }}"
-                     class="px-3 py-1.5 rounded-full border text-sm font-semibold transition
-                            {{ $isActive
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-slate-700 hover:bg-blue-50 dark:hover:bg-slate-700' }}">
-                    {{ $tipo->nome }}
-                  </a>
-                @endforeach
-              </div>
-
-              <!-- Pesquisa -->
-              <div class="md:col-span-2 flex items-center justify-end gap-2">
-                <input
-                  type="text"
-                  x-model="search"
-                  @keydown.enter.prevent="applySearch()"
-                  placeholder="Buscar por título…"
-                  class="w-full md:w-80 h-10 rounded-xl border border-gray-200 dark:border-slate-600
-                         bg-white dark:bg-slate-800 px-3 text-sm text-gray-700 dark:text-gray-200
-                         focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <div class="mb-6">
+                <div
+                    class="relative z-[200] rounded-2xl bg-white/70 dark:bg-neutral-900/50 backdrop-blur border border-white/10 p-3 supports-[backdrop-filter]:bg-white/50 dark:supports-[backdrop-filter]:bg-neutral-900/50"
                 >
-                <button type="button"
-                        @click="applySearch()"
-                        class="px-3 h-10 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">
-                  Buscar
-                </button>
-                <button type="button"
-                        @click="clearSearch()"
-                        class="px-3 h-10 rounded-xl border border-gray-200 dark:border-slate-600
-                               bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-slate-700">
-                  Limpar
-                </button>
-              </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- Pesquisa -->
+                        <div class="flex-1 min-w-[260px] flex items-center gap-2">
+                            <input
+                                type="text"
+                                x-model="search"
+                                @keydown.enter.prevent="applySearch()"
+                                placeholder="Buscar por título…"
+                                class="w-full h-10 rounded-xl border border-white/10 bg-white/40 dark:bg-white/10 px-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 backdrop-blur"
+                            >
+                            <button type="button"
+                                    @click="applySearch()"
+                                    class="px-3 h-10 inline-flex items-center justify-center rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">
+                                Buscar
+                            </button>
+                            <button type="button"
+                                    @click="clearSearch()"
+                                    class="px-3 h-10 inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/30 dark:bg-white/10 text-sm text-gray-900 dark:text-gray-100 hover:bg-white/40 backdrop-blur">
+                                Limpar
+                            </button>
+                        </div>
+
+                        <!-- Tipos: popover compacto com múltipla seleção -->
+                        <div class="relative"
+                             x-data="{ 
+                                 showTipos:false, 
+                                 selected: @js($selectedTipos),
+                                 updateTipo(vals){
+                                     const params = new URLSearchParams(window.location.search);
+                                     if (vals && vals.length) params.set('tipo', vals.join(',')); else params.delete('tipo');
+                                     params.delete('page');
+                                     window.location = `${window.location.pathname}?${params.toString()}`;
+                                 }
+                             }"
+                        >
+                            <button x-ref="tiposBtn" type="button"
+                                    @click="showTipos = !showTipos"
+                                    aria-haspopup="dialog" :aria-expanded="showTipos"
+                                    class="px-4 h-10 inline-flex items-center gap-2 rounded-xl border font-semibold text-sm transition
+                                           bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700">
+                                Tipos
+                                <span x-show="selected.length" x-cloak
+                                      class="ml-1 text-[10px] px-2 py-0.5 rounded-full bg-blue-600 text-white">
+                                    <span x-text="selected.length"></span>
+                                </span>
+                            </button>
+
+                            <div x-cloak x-show="showTipos" x-transition.opacity.scale.origin.top.right
+                                 @keydown.escape.window="showTipos=false"
+                                 class="absolute right-0 mt-2 w-72 rounded-2xl bg-white/40 dark:bg-neutral-900/90 supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-neutral-900/80 backdrop-blur-sm border border-white/20 dark:border-white/10 shadow-2xl p-3 z-[500]">
+                                <div class="max-h-64 overflow-auto pr-1">
+                                    @foreach ($tipos as $tipo)
+                                        <label class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-blue-50/70 dark:hover:bg-slate-700/50 cursor-pointer">
+                                            <input type="checkbox" class="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                                                   :value="'{{ (string)$tipo->id }}'" x-model="selected">
+                                            <span class="text-sm text-gray-800 dark:text-gray-200">{{ $tipo->nome }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                                <div class="flex items-center justify-between gap-2 pt-3">
+                                    <button type="button" class="text-sm px-3 py-1.5 rounded-lg border border-transparent text-gray-700 dark:text-gray-200 hover:underline"
+                                            @click="selected=[]; updateTipo([])">
+                                        Limpar
+                                    </button>
+                                    <div class="flex gap-2">
+                                        <button type="button" class="text-sm px-3 py-1.5 rounded-lg border border-white/10 bg-white/40 dark:bg-white/10 text-gray-800 dark:text-gray-200 hover:bg-white/60"
+                                                @click="showTipos=false">
+                                            Fechar
+                                        </button>
+                                        <button type="button" class="text-sm px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                                                @click="updateTipo(selected)">
+                                            Aplicar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Barra de seleção -->
-            <div class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-100 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur p-3">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/70 supports-[backdrop-filter]:bg-white/50 dark:bg-neutral-900/70 dark:supports-[backdrop-filter]:bg-neutral-900/50 backdrop-blur p-3">
                 <div class="flex items-center gap-3">
                     <label class="inline-flex items-center gap-2">
                         <input type="checkbox" @change="toggleAll($event)" :checked="allOnPageChecked"
-                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                        <span class="text-sm text-gray-700 dark:text-gray-200">Selecionar todos na página</span>
+                               class="h-4 w-4 rounded border-white/20 text-blue-600 focus:ring-blue-500">
+                        <span class="text-sm text-gray-900 dark:text-gray-100">Selecionar todos na página</span>
                     </label>
 
                     <button type="button" @click="clearAll()"
-                            class="text-sm px-3 py-1 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-700">
+                            class="text-sm px-3 py-1 rounded-lg bg-white/30 dark:bg-white/10 border border-white/10 text-gray-900 dark:text-gray-100 hover:bg-white/40 backdrop-blur">
                         Limpar seleção
                     </button>
                 </div>
 
                 <div class="text-sm">
-                    <span class="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
+                    <span class="px-2 py-1 rounded-lg bg-blue-500/15 text-blue-200 border border-blue-300/20">
                         <strong x-text="selected.size"></strong> selecionado(s)
                     </span>
                 </div>
             </div>
 
             <!-- Tabela -->
-            <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow">
+            <div class="overflow-x-auto rounded-2xl border border-white/10 bg-white/60 dark:bg-neutral-900/60 supports-[backdrop-filter]:bg-white/40 dark:supports-[backdrop-filter]:bg-neutral-900/40 backdrop-blur shadow">
                 <table class="min-w-full">
-                    <thead class="sticky z-20 top-[var(--app-header,0px)] bg-gray-50/95 dark:bg-slate-900/95 backdrop-blur border-b border-gray-200 dark:border-slate-700">
-                        <tr class="text-left text-sm text-gray-600 dark:text-gray-300">
+                    <thead class="sticky z-20 top-[var(--app-header,0px)] bg-white/70 dark:bg-neutral-900/70 supports-[backdrop-filter]:bg-white/50 dark:supports-[backdrop-filter]:bg-neutral-900/50 backdrop-blur border-b border-white/10">
+                        <tr class="text-left text-sm text-gray-900 dark:text-gray-100">
                             <th class="px-4 py-3 w-14">Sel.</th>
                             <th class="px-4 py-3">Título</th>
                             <th class="px-4 py-3">Tipo</th>
@@ -107,7 +133,7 @@
                             <th class="px-4 py-3 w-44">Capo</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+                    <tbody class="divide-y divide-white/10">
                         @forelse ($cantos as $canto)
                             <tr class="hover:bg-blue-50 dark:hover:bg-slate-700/50 transition">
                                 <!-- Sel -->
@@ -226,7 +252,7 @@
                     Gerar PDF com Selecionados
                 </button>
                 <button type="button" @click="scrollTo({top:0, behavior:'smooth'})"
-                        class="px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-slate-700">
+                        class="px-4 py-3 rounded-xl border border-white/10 bg-white/30 dark:bg-white/10 text-gray-900 dark:text-gray-100 hover:bg-white/40 backdrop-blur">
                     Voltar ao topo
                 </button>
             </div>

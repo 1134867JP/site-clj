@@ -1,124 +1,121 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-100 leading-tight">
-                {{ __('Cantos') }}
-            </h2>
+    {{-- Removido header para seguir o layout do "Gerar PDF" --}}
 
-            <div class="flex items-center gap-2">
-                <!-- Busca + Sort (desktop) -->
-                <form action="" method="GET" class="hidden md:flex items-center gap-2">
-                    <input
-                        type="text"
-                        name="q"
-                        value="{{ request('q') }}"
-                        placeholder="Buscar por título, guia, tom…"
-                        class="w-64 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <select name="sort"
-                        class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-2 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="" @selected(!request('sort'))>Mais acessados</option>
-                        <option value="titulo" @selected(request('sort')==='titulo')>Título (A–Z)</option>
-                        <option value="recente" @selected(request('sort')==='recente')>Recentes</option>
-                    </select>
-                    <button class="px-3 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">
-                        Filtrar
-                    </button>
-                </form>
-
-                <!-- CTA -->
-                @can('create', App\Models\Canto::class)
-                <a href="{{ route('cantos.create') }}"
-                   class="px-3 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 text-sm font-semibold shadow">
-                    + Adicionar Canto
-                </a>
-                @endcan
-            </div>
-        </div>
-    </x-slot>
+    @php
+        $paramTipo = request()->input('tipo');
+        $selectedTipos = is_array($paramTipo)
+            ? array_values(array_unique(array_filter($paramTipo)))
+            : array_values(array_unique(array_filter(array_map('trim', explode(',', (string) $paramTipo)))));
+    @endphp
 
     <div class="max-w-6xl mx-auto py-8 px-4">
-        <!-- Barra sticky com filtros -->
-        <div class="sticky top-16 z-20 mb-6">
-            <div class="rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur border border-gray-100 dark:border-slate-700 p-3">
+        <!-- Barra com filtros (não-sticky) -->
+        <div class="mb-6">
+            <div
+                class="relative z-[200] rounded-2xl bg-white/70 dark:bg-neutral-900/50 backdrop-blur border border-white/10 p-3 supports-[backdrop-filter]:bg-white/50 dark:supports-[backdrop-filter]:bg-neutral-900/50"
+                x-data="{ 
+                    showTipos:false,
+                    selected: @js($selectedTipos)
+                }"
+            >
                 <div class="flex flex-wrap items-center gap-2">
-                    <!-- Busca (mobile) -->
-                    <form action="" method="GET" class="md:hidden flex-1 min-w-[260px]">
+                    <!-- Busca (igual Selecionar) -->
+                    <form action="" method="GET" class="flex-1 min-w-[260px] flex items-center gap-2" x-ref="filterForm">
                         <input
                             type="text"
                             name="q"
                             value="{{ request('q') }}"
-                            placeholder="Buscar por título, guia, tom…"
-                            class="w-full rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Buscar por título…"
+                            class="w-full h-10 rounded-xl border border-white/10 bg-white/40 dark:bg-white/10 px-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500 backdrop-blur"
                         />
+                        <button class="px-3 h-10 inline-flex items-center justify-center rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700" type="submit">
+                          Buscar
+                        </button>
+                        <a href="{{ route('cantos.index') }}"
+                           class="px-3 h-10 inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/30 dark:bg-white/10 text-sm text-gray-900 dark:text-gray-100 hover:bg-white/40 backdrop-blur">
+                          Limpar
+                        </a>
+
+                        <!-- Mantém outros filtros ao enviar -->
+                        <input type="hidden" name="tipo" x-ref="tipoInput" value="{{ request()->has('tipo') ? (is_array(request('tipo')) ? implode(',', request('tipo')) : request('tipo')) : '' }}">
+                        @if(request()->has('sort'))
+                          <input type="hidden" name="sort" value="{{ request('sort') }}">
+                        @endif
                     </form>
 
-                    <!-- Chips de filtro (multi-seleção) -->
-                    @php
-                        $paramTipo = request()->input('tipo');
-                        $sel = is_array($paramTipo)
-                            ? array_values(array_unique(array_filter($paramTipo)))
-                            : array_values(array_unique(array_filter(array_map('trim', explode(',', (string) $paramTipo)))));
-                        $selSet = array_flip($sel);
-                    @endphp
+                    <!-- Tipos: popover compacto com múltipla seleção -->
+                    <div class="relative">
+                        <button x-ref="tiposBtn" type="button"
+                                @click="showTipos = !showTipos"
+                                aria-haspopup="dialog" :aria-expanded="showTipos"
+                                class="px-4 h-10 inline-flex items-center gap-2 rounded-xl border font-semibold text-sm transition
+                                       bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700">
+                            Tipos
+                            <span x-show="selected.length" x-cloak
+                                  class="ml-1 text-[10px] px-2 py-0.5 rounded-full bg-blue-600 text-white">
+                                <span x-text="selected.length"></span>
+                            </span>
+                        </button>
 
-                    <a href="{{ request()->fullUrlWithQuery(['tipo'=>null]) }}"
-                       class="px-4 py-2 rounded-full border font-semibold transition text-sm
-                       {{ empty($sel)
-                           ? 'bg-blue-600 text-white border-blue-600'
-                           : 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700' }}">
-                        Todos
-                    </a>
-
-                    @foreach ($tipos as $tipo)
-                        @php
-                            $isActive = isset($selSet[(string)$tipo->id]) || isset($selSet[$tipo->nome]);
-                            $next = $sel;
-                            if ($isActive) {
-                                $next = array_values(array_filter($next, fn($v) => $v !== (string)$tipo->id && $v !== $tipo->nome));
-                            } else {
-                                $next[] = (string)$tipo->id; // usa id para estabilidade
-                            }
-                            $query = ['tipo' => $next ? implode(',', $next) : null];
-                        @endphp
-                        <a href="{{ request()->fullUrlWithQuery($query) }}"
-                           class="px-4 py-2 rounded-full border font-semibold transition text-sm
-                           {{ $isActive
-                               ? 'bg-blue-600 text-white border-blue-600'
-                               : 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700' }}">
-                            {{ $tipo->nome }}
-                        </a>
-                    @endforeach
+                        <div x-cloak x-show="showTipos" x-transition.opacity.scale.origin.top.right
+                             @keydown.escape.window="showTipos=false"
+                             class="absolute right-0 mt-2 w-72 rounded-2xl bg-white/40 dark:bg-neutral-900/90 supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-neutral-900/80 backdrop-blur-sm border border-white/20 dark:border-white/10 shadow-2xl p-3 z-[500]">
+                            <div class="max-h-64 overflow-auto pr-1">
+                                @foreach ($tipos as $tipo)
+                                    <label class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-blue-50/70 dark:hover:bg-slate-700/50 cursor-pointer">
+                                        <input type="checkbox" class="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                                               :value="'{{ (string)$tipo->id }}'" x-model="selected">
+                                        <span class="text-sm text-gray-800 dark:text-gray-200">{{ $tipo->nome }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            <div class="flex items-center justify-between gap-2 pt-3">
+                                <button type="button" class="text-sm px-3 py-1.5 rounded-lg border border-transparent text-gray-700 dark:text-gray-200 hover:underline"
+                                        @click="selected=[]; $refs.tipoInput.value=''; $refs.filterForm.submit()">
+                                    Limpar
+                                </button>
+                                <div class="flex gap-2">
+                                    <button type="button" class="text-sm px-3 py-1.5 rounded-lg border border-white/10 bg-white/40 dark:bg-white/10 text-gray-800 dark:text-gray-200 hover:bg-white/60"
+                                            @click="showTipos=false">
+                                        Fechar
+                                    </button>
+                                    <button type="button" class="text-sm px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                                            @click="$refs.tipoInput.value = selected.join(','); $refs.filterForm.submit()">
+                                        Aplicar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Lista estilo ranking -->
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow p-8">
-            <div class="flex items-center justify-between mb-6">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Todos os Cantos</h1>
-
-                @if(method_exists($cantos, 'total'))
+        <div class="relative z-10 overflow-hidden bg-white/70 dark:bg-neutral-900/70 supports-[backdrop-filter]:bg-white/50 dark:supports-[backdrop-filter]:bg-neutral-900/50 backdrop-blur rounded-2xl border border-white/10 shadow-2xl p-8">
+            <!-- Removido título grande -->
+            @if(method_exists($cantos, 'total'))
+                <div class="mb-4 text-right">
                     <span class="text-xs px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
                         {{ $cantos->total() }} resultados
                     </span>
-                @endif
-            </div>
+                </div>
+            @endif
 
-            <div class="divide-y divide-blue-50 dark:divide-slate-700">
+            <div class="divide-y divide-white/10">
                 @forelse ($cantos as $index => $canto)
                     @php
                         $rank = $index + 1 + (method_exists($cantos, 'firstItem') ? ($cantos->firstItem() - 1) : 0);
                         $isTop = $rank <= 3;
                     @endphp
 
-                    <div class="flex items-center py-5 gap-4">
+                    <div class="flex items-center py-5 gap-4 rounded-xl hover:bg-white/45 dark:hover:bg-white/10 transition-colors px-4">
                         <!-- Ranking -->
                         <div class="w-10 text-center">
                             <span class="inline-flex items-center justify-center h-8 w-8 rounded-full text-sm font-extrabold
                                 {{ $isTop
                                     ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow'
-                                    : 'bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-200 border border-blue-100 dark:border-slate-600' }}">
+                                    : 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-200 border border-white/20 dark:border-slate-600' }}">
                                 {{ $rank }}
                             </span>
                         </div>
@@ -198,5 +195,18 @@
                 </div>
             @endif
         </div>
+    </div>
+
+    <!-- Botão flutuante: voltar ao topo -->
+    <div x-data="{ showTop:false }" x-init="window.addEventListener('scroll', () => { showTop = window.scrollY > 300 })"
+         class="fixed bottom-6 right-6 z-40">
+        <button x-show="showTop" x-transition
+                @click="window.scrollTo({ top: 0, behavior: 'smooth' })"
+                type="button"
+                class="h-12 w-12 rounded-full bg-white/70 dark:bg-neutral-900/70 supports-[backdrop-filter]:bg-white/50 dark:supports-[backdrop-filter]:bg-neutral-900/50 backdrop-blur border border-white/20 shadow-xl flex items-center justify-center text-blue-700 dark:text-blue-200 hover:bg-white/80">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+            </svg>
+        </button>
     </div>
 </x-app-layout>

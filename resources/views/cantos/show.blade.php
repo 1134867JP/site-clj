@@ -1,6 +1,6 @@
 <x-app-layout>
   <div class="max-w-6xl mx-auto py-8 px-4">
-    <div class="bg-white dark:bg-slate-900 shadow rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden">
+    <div class="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl shadow-2xl rounded-2xl border border-white/10 overflow-hidden">
       <!-- Header + Ações -->
       <div class="px-4 sm:px-6 pt-6">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -28,7 +28,7 @@
 
       <!-- Toolbar Sticky -->
       <div class="sticky top-[var(--app-header,64px)] z-10 mt-6">
-        <div class="px-4 sm:px-6 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-y border-gray-100 dark:border-slate-800">
+        <div class="px-4 sm:px-6 py-3 bg-white/70 supports-[backdrop-filter]:bg-white/50 dark:bg-neutral-900/70 dark:supports-[backdrop-filter]:bg-neutral-900/50 backdrop-blur border-y border-white/10">
           <div class="flex flex-wrap items-center gap-3 sm:gap-4">
 
             <!-- Tom atual -->
@@ -94,18 +94,16 @@
       <div class="p-4 sm:p-6">
         <pre id="cifra-letra"
              data-canto-id="{{ $canto->id }}"
-             class="bg-white dark:bg-slate-900 p-4 rounded-lg text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-mono leading-relaxed text-[16px] border border-gray-200 dark:border-slate-800 shadow-inner">{!! \App\Http\Controllers\CantosController::formatCifra($canto->letra) !!}</pre>
+             class="bg-white/30 dark:bg-white/5 p-4 rounded-lg text-gray-900 dark:text-gray-100 whitespace-pre-wrap font-mono leading-relaxed text-[16px] border border-white/10 shadow-inner">{!! \App\Http\Controllers\CantosController::formatCifra($canto->letra) !!}</pre>
       </div>
     </div>
   </div>
 
   <!-- Painel Auto-rolagem — SOMENTE MODOS + PLAY -->
   <div id="asc-panel" class="fixed left-4 bottom-4 z-50 select-none">
-    <div class="flex items-center gap-2 rounded-2xl border border-gray-200 dark:border-slate-700
-                bg-white/90 dark:bg-slate-900/90 backdrop-blur px-3 py-2 shadow-xl">
+    <div class="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/70 supports-[backdrop-filter]:bg-white/50 dark:bg-neutral-900/70 dark:supports-[backdrop-filter]:bg-neutral-900/50 backdrop-blur px-3 py-2 shadow-xl">
       <select id="asc-mode"
-              class="rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800
-                     text-gray-800 dark:text-gray-100 text-sm font-semibold px-2 py-1">
+              class="rounded-lg border border-white/10 bg-white/40 dark:bg-white/10 text-gray-800 dark:text-gray-100 text-sm font-semibold px-2 py-1">
         <option value="0">Muito Lento</option>
         <option value="1">Lento</option>
         <option value="2" selected>Normal</option>
@@ -114,8 +112,7 @@
       </select>
 
       <button id="asc-play"
-              class="h-10 w-10 rounded-xl font-extrabold text-white bg-blue-600 hover:bg-blue-700
-                     dark:bg-blue-500 dark:hover:bg-blue-600 grid place-items-center">▶</button>
+              class="h-10 w-10 rounded-xl font-extrabold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 grid place-items-center">▶</button>
     </div>
   </div>
 

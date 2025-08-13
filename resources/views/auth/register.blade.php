@@ -36,7 +36,7 @@
     <main class="flex items-center justify-center p-6">
       <div class="w-full max-w-md">
         <a href="{{ url('/') }}" class="inline-flex items-center gap-2 mb-6 text-white/85 hover:text-white">
-          <x-application-logo class="h-8 w-auto"/><span class="sr-only">CifraDocs</span>
+          <span class="sr-only">CifraDocs</span>
         </a>
 
         <div class="rounded-2xl bg-neutral-900/75 backdrop-blur-xl border border-white/10 shadow-2xl p-8">

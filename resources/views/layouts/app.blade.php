@@ -27,13 +27,31 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
+    @php $bg = asset('storage/images/clj_logo_cover_1920x1080.webp'); @endphp
     <body class="font-sans antialiased bg-gray-100 text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-colors">
+        <!-- Global blurred background + gradients (behind app) -->
+        <!-- Light mode background -->
+        <div aria-hidden="true" class="fixed inset-0 -z-20 block dark:hidden">
+            <img src="{{ $bg }}" class="w-full h-full object-cover" style="object-position:50% 36%; filter:blur(14px) saturate(110%) brightness(0.65); transform:scale(1.06);">
+        </div>
+        <div aria-hidden="true" class="fixed inset-0 -z-10 block dark:hidden"
+             style="background:radial-gradient(1200px 600px at 50% 40%, rgba(0,0,0,.08), transparent 65%),
+                                radial-gradient(1400px 800px at 50% 110%, rgba(0,0,0,.14), transparent 60%)"></div>
+
+        <!-- Dark mode background -->
+        <div aria-hidden="true" class="fixed inset-0 -z-20 hidden dark:block">
+            <img src="{{ $bg }}" class="w-full h-full object-cover" style="object-position:50% 36%; filter:blur(14px) saturate(110%) brightness(0.25); transform:scale(1.06);">
+        </div>
+        <div aria-hidden="true" class="fixed inset-0 -z-10 hidden dark:block"
+             style="background:radial-gradient(1200px 600px at 50% 40%, rgba(0,0,0,.18), transparent 65%),
+                                radial-gradient(1400px 800px at 50% 110%, rgba(0,0,0,.30), transparent 60%)"></div>
+
         <div class="min-h-screen">
             @include('layouts.navigation')
 
             <!-- Page Heading -->
             @isset($header)
-                <header class="sticky top-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-gray-100 dark:border-slate-700">
+                <header class="sticky top-0 z-10 bg-white/70 supports-[backdrop-filter]:bg-white/50 dark:bg-neutral-900/70 dark:supports-[backdrop-filter]:bg-neutral-900/50 backdrop-blur border-b border-white/10">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                         {{ $header }}
                     </div>
